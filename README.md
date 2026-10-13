@@ -20,7 +20,7 @@ You will also need a Prototype Kit project to use the output. To create one:
 ```bash
 npx govuk-prototype-kit create my-prototype
 cd my-prototype
-npm start
+open "file://$HOME/govuk-prototype-builder/index.html"
 ```
 
 See the [Prototype Kit documentation](https://prototype-kit.service.gov.uk/docs/) for details and version requirements.
