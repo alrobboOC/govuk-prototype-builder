@@ -90,14 +90,16 @@ pre,#out{width:100%;height:480px;font:12px/1.5 Consolas,Menlo,monospace;backgrou
 .govuk-table{border-collapse:collapse;width:100%;margin-bottom:30px;font-size:19px}.govuk-table th,.govuk-table td{text-align:left;padding:10px 20px 10px 0;border-bottom:1px solid #b1b4b6}.govuk-table__caption--m{font:700 24px Arial;text-align:left;margin-bottom:15px}
 .govuk-tabs__title{display:none}.govuk-tabs__list{list-style:none;display:flex;gap:4px;margin:0;padding:0;border-bottom:1px solid #b1b4b6}.govuk-tabs__tab{display:block;padding:10px 20px;background:#f3f2f1;color:#0b0c0c;font-size:19px}.govuk-tabs__list-item--selected .govuk-tabs__tab{background:#fff;border:1px solid #b1b4b6;border-bottom-color:#fff;margin-bottom:-1px}.govuk-tabs__panel{padding:30px 20px;border:1px solid #b1b4b6;border-top:0;margin-bottom:30px}.govuk-tabs__panel--hidden{display:none}
 .govuk-task-list{list-style:none;margin:0 0 30px;padding:0;font-size:19px}.govuk-task-list__item{display:flex;justify-content:space-between;border-bottom:1px solid #b1b4b6;padding:10px 0}.govuk-task-list .govuk-tag{margin:0}
+.pal{display:flex;justify-content:space-between;align-items:center;gap:8px}.gl{flex:none;color:var(--bl);text-decoration:none;border:1px solid var(--ln);width:22px;height:22px;text-align:center;font-size:13px;line-height:20px;border-radius:50%}.gl:hover,.gl:focus{background:var(--bl);color:#fff;outline:3px solid var(--fc)}.gdl{color:var(--bl)}
+.pbar{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px}.pg{background:var(--pn);color:var(--ink);border:1px solid var(--ln);padding:6px 12px;font:700 14px Arial,sans-serif;cursor:pointer}.pg.on{background:var(--bl);color:#fff;border-color:var(--bl)}.pg.add{border-style:dashed;color:var(--bl)}.pg:focus{outline:3px solid var(--fc)}
 </style></head>
 <body>
-<header><b>GOV.UK Prototype Builder</b><span>Drag components onto the page, then copy the Nunjucks into your Prototype Kit app/views folder.</span></header>
+<header><b>GOV.UK Prototype Builder</b><span>Drag components onto the page, add pages, then copy the Nunjucks and routes into your Prototype Kit app.</span></header>
 <div class="app">
  <div class="col" id="pal" aria-label="Components"></div>
- <div class="col" id="cv"><div class="page"><div class="in" id="page"></div></div></div>
+ <div><div class="pbar" id="bar"></div><div class="col" id="cv"><div class="page"><div class="in" id="page"></div></div></div></div>
  <div class="col" id="side">
-  <div class="tabs" role="tablist"><button class="tab" data-t="p">Properties</button><button class="tab" data-t="n">Nunjucks</button><button class="tab" data-t="h">HTML</button></div>
+  <div class="tabs" role="tablist"><button class="tab" data-t="p">Properties</button><button class="tab" data-t="n">Nunjucks</button><button class="tab" data-t="h">HTML</button><button class="tab" data-t="r">Routes</button></div>
   <div id="sb"></div>
  </div>
 </div>
@@ -156,20 +158,22 @@ cookie:{n:'Cookie banner',g:'Page layout',blk:'bodyStart',m:['govukCookieBanner'
 };
 let S={items:[],sel:null,tab:'p',title:'Page title'};
 try{const s=JSON.parse(localStorage.getItem('govuk-builder')||'null');if(s&&Array.isArray(s.items))S=Object.assign(S,s,{tab:'p'})}catch(_){}
+if(!S.pages||!S.pages.length){S.pages=[{id:'p1',name:'start',title:S.title,items:S.items,next:'',branch:{}}];S.cur=0}
+S.cur=Math.min(S.cur||0,S.pages.length-1);S.items=S.pages[S.cur].items;S.title=S.pages[S.cur].title;
 const $=s=>document.querySelector(s);
-const save=()=>{try{localStorage.setItem('govuk-builder',JSON.stringify(S))}catch(_){}};
+const save=()=>{const P=S.pages[S.cur];if(P){P.items=S.items;P.title=S.title}try{localStorage.setItem('govuk-builder',JSON.stringify(S))}catch(_){}};
 const mk=t=>{const p={};C[t].p.forEach(([k,,d])=>p[k]=d);return{t,p}};
-function palette(){let h='';for(const g of ['Content','Form','Navigation','Page layout'])for(const[id,c]of Object.entries(C).filter(([,c])=>c.g===g)){if(!h.includes('<h2>'+g))h+=`<h2>${g}</h2>`;h+=`<div class="pal" draggable="true" tabindex="0" role="button" data-id="${id}">${c.n}</div>`}
+function palette(){let h='';for(const g of ['Content','Form','Navigation','Page layout'])for(const[id,c]of Object.entries(C).filter(([,c])=>c.g===g)){if(!h.includes('<h2>'+g))h+=`<h2>${g}</h2>`;h+=`<div class="pal" draggable="true" tabindex="0" role="button" data-id="${id}"><span>${c.n}</span><a class="gl" href="${gu(id)}" target="_blank" rel="noopener" draggable="false" title="Design System guidance for ${c.n}" aria-label="Design System guidance for ${c.n} (opens in new tab)">?</a></div>`}
 $('#pal').innerHTML=`<p class="hint" style="margin-top:0">Drag onto the page, or press Enter on a component.</p>`+h}
 function canvas(){$('#page').innerHTML=S.items.length?S.items.map((it,i)=>`<div class="it${i===S.sel?' sel':''}" draggable="true" tabindex="0" data-i="${i}"><div class="pv">${C[it.t].h(it.p)}</div></div>`).join(''):'<div class="empty">Drag a component here to start your page</div>'}
 const ind=s=>s.split('\n').map(l=>l?'    '+l:l).join('\n');
-const isForm=()=>S.items.some(i=>C[i.t].f);
+const hasForm=its=>its.some(i=>C[i.t].f||i.t==='button');const isForm=()=>hasForm(S.items);
 const pr=s=>L(s).map(x=>{const[a,...b]=x.split('|');return[a.trim(),b.join('|').trim()]});
 const fg=(l,n,h,inner)=>`<div class="govuk-form-group">${lab(l,n)}${hn(h,n)}${inner}</div>`;
 const pg=p=>{const n=Math.min(Math.max(+p.total||1,1),10);return[n,Math.min(Math.max(+p.current||1,1),n)]};
 const O=['skipLink','bodyStart','header','beforeContent','content','footer'];
 const bk=i=>C[i.t].blk||'content';
-const fmt=i=>(C[i.t].j||C[i.t].h)(i.p);
+const fmt=i=>`{# ${C[i.t].n}: ${gu(i.t)} #}\n`+(C[i.t].j||C[i.t].h)(i.p);
 function nunjucks(){
  const m=[...new Set(S.items.filter(i=>C[i.t].m).map(i=>C[i.t].m.join('|')))];
  const imp=m.map(x=>{const[a,b]=x.split('|');return`{% from "govuk/components/${b}/macro.njk" import ${a} %}`}).join('\n');
@@ -180,6 +184,7 @@ function nunjucks(){
  return out.trimEnd()+'\n'}
 function html(){const g=b=>S.items.filter(i=>bk(i)===b).map(i=>C[i.t].h(i.p)).join('\n\n');
  return O.map(b=>{const t=g(b);if(!t)return'';if(b!=='content')return t+'\n\n';const inner=isForm()?`<form method="post" novalidate>\n${ind(t)}\n</form>`:t;return`<div class="govuk-grid-row">\n  <div class="govuk-grid-column-two-thirds">\n${ind(inner)}\n  </div>\n</div>\n\n`}).join('').trimEnd()+'\n'}
+const gu=t=>{const c=C[t];return 'https://design-system.service.gov.uk/'+(c.m?'components/'+(c.m[1]==='input'?'text-input':c.m[1]):'styles/'+(t==='heading'?'headings':'paragraphs'))+'/'};
 function nunjucksOld(){const m=[...new Set(S.items.filter(i=>C[i.t].m).map(i=>C[i.t].m))].map(x=>x.join('|'));
 const imp=m.map(x=>{const[a,b]=x.split('|');return`{% from "govuk/components/${b}/macro.njk" import ${a} %}`}).join('\n');
 const body=S.items.filter(i=>!C[i.t].top).map(i=>(C[i.t].j||C[i.t].h)(i.p)).join('\n\n');
@@ -189,17 +194,17 @@ return`{% extends "layouts/main.html" %}\n\n${imp?imp+'\n\n':''}{% block pageTit
 function htmlOld(){const b=S.items.map(i=>C[i.t].h(i.p)).join('\n\n');const inner=isForm()?`<form method="post" novalidate>\n${ind(b)}\n</form>`:b;return`<div class="govuk-grid-row">\n  <div class="govuk-grid-column-two-thirds">\n${ind(inner)}\n  </div>\n</div>\n`}
 function side(){document.querySelectorAll('.tab').forEach(t=>t.setAttribute('aria-selected',t.dataset.t===S.tab))
 const sb=$('#sb');if(S.tab==='p')return props(sb);code(sb)}
-function code(sb){const txt=S.tab==='n'?nunjucks():html();
-if(!sb.querySelector('#out')){sb.innerHTML=`<label class="f" style="margin-top:0" for="out">${S.tab==='n'?'Save as app/views/your-page.html':'Plain HTML for the page body'}</label><textarea id="out" readonly></textarea><div class="row"><button class="btn" id="cp">Copy to clipboard</button><span class="hint" id="cm" role="status"></span></div>`;$('#cp').onclick=async()=>{const o=$('#out');try{await navigator.clipboard.writeText(o.value);$('#cm').textContent='Copied'}catch(_){o.select();try{document.execCommand('copy');$('#cm').textContent='Copied'}catch(__){$('#cm').textContent='Select the text and copy it'}}}}
+function code(sb){const txt=S.tab==='n'?nunjucks():S.tab==='r'?routes():html();
+if(!sb.querySelector('#out')){sb.innerHTML=`<label class="f" style="margin-top:0" for="out">${S.tab==='n'?'Save as app/views/'+S.pages[S.cur].name+'.html':S.tab==='r'?'Add to app/routes.js':'Plain HTML for the page body'}</label><textarea id="out" readonly></textarea><div class="row"><button class="btn" id="cp">Copy to clipboard</button><span class="hint" id="cm" role="status"></span></div>`;$('#cp').onclick=async()=>{const o=$('#out');try{await navigator.clipboard.writeText(o.value);$('#cm').textContent='Copied'}catch(_){o.select();try{document.execCommand('copy');$('#cm').textContent='Copied'}catch(__){$('#cm').textContent='Select the text and copy it'}}}}
 $('#out').value=txt}
 function props(sb){const it=S.items[S.sel];
-let h=`<label class="f" style="margin-top:0" for="pt">Page title</label><input class="fld" id="pt" value="${e(S.title)}">`;
+let h=pageSettings();
 if(!it){sb.innerHTML=h+`<p class="hint" style="margin-top:16px">Select a component on the page to edit its content.</p>`;$('#pt').oninput=ev=>{S.title=ev.target.value;save()};return}
-h+=`<h2 style="margin-top:20px">${C[it.t].n}</h2>`;
+h+=`<h2 style="margin-top:20px">${C[it.t].n}</h2><p><a class="gdl" href="${gu(it.t)}" target="_blank" rel="noopener">Read the ${C[it.t].n} guidance on the GOV.UK Design System (opens in new tab)</a></p>`;
 C[it.t].p.forEach(([k,l,,ty])=>{h+=`<label class="f" for="p-${k}">${l}</label>`+(Array.isArray(ty)?`<select class="fld" id="p-${k}" data-k="${k}">${ty.map(o=>`<option${it.p[k]===o?' selected':''}>${o}</option>`).join('')}</select>`:ty==='area'?`<textarea class="fld" rows="4" id="p-${k}" data-k="${k}">${e(it.p[k])}</textarea>`:`<input class="fld" id="p-${k}" data-k="${k}" value="${e(it.p[k])}">`)});
 h+=`<div class="row"><button class="btn s" data-a="up">Move up</button><button class="btn s" data-a="down">Move down</button><button class="btn s" data-a="dup">Duplicate</button><button class="btn d" data-a="del">Delete</button></div>`;
 sb.innerHTML=h;$('#pt').oninput=ev=>{S.title=ev.target.value;save()}}
-function all(){canvas();side();save()}
+function all(){canvas();side();bar();save()}
 function add(id,at){const it=mk(id);const i=at==null?S.items.length:at;S.items.splice(i,0,it);S.sel=i;S.tab='p';all()}
 function idxAt(y){const els=[...document.querySelectorAll('.it')];let n=0;els.forEach(el=>{const r=el.getBoundingClientRect();if(y>r.top+r.height/2)n++});return n}
 function clr(){document.querySelectorAll('.dropb').forEach(x=>x.classList.remove('dropb'));$('#cv').classList.remove('drope')}
@@ -211,7 +216,7 @@ cv.addEventListener('dragleave',ev=>{if(!cv.contains(ev.relatedTarget))clr()});
 cv.addEventListener('drop',ev=>{ev.preventDefault();const n=idxAt(ev.clientY);clr();const d=ev.dataTransfer.getData('text/plain');
 if(d.startsWith('new:'))add(d.slice(4),n);else if(d.startsWith('mv:')){const f=+d.slice(3),[it]=S.items.splice(f,1);const to=n>f?n-1:n;S.items.splice(to,0,it);S.sel=to;all()}});
 document.addEventListener('dragend',clr);
-document.addEventListener('click',ev=>{const p=ev.target.closest('.pal');if(p)return add(p.dataset.id);
+document.addEventListener('click',ev=>{if(ev.target.closest('a'))return;if(pageClick(ev))return;const p=ev.target.closest('.pal');if(p)return add(p.dataset.id);
 const i=ev.target.closest('.it');if(i){S.sel=+i.dataset.i;S.tab='p';return all()}
 const t=ev.target.closest('.tab');if(t){S.tab=t.dataset.t;$('#sb').innerHTML='';return side()}
 const a=ev.target.closest('[data-a]');if(a){const s=S.sel,I=S.items;
@@ -220,7 +225,24 @@ if(a.dataset.a==='dup'){I.splice(s+1,0,JSON.parse(JSON.stringify(I[s])));S.sel=s
 if(a.dataset.a==='up'&&s>0){[I[s-1],I[s]]=[I[s],I[s-1]];S.sel=s-1}
 if(a.dataset.a==='down'&&s<I.length-1){[I[s+1],I[s]]=[I[s],I[s+1]];S.sel=s+1}
 all()}});
-document.addEventListener('keydown',ev=>{if(ev.key!=='Enter')return;const p=ev.target.closest&&ev.target.closest('.pal');if(p)add(p.dataset.id);const i=ev.target.closest&&ev.target.closest('.it');if(i){S.sel=+i.dataset.i;S.tab='p';all()}});
+document.addEventListener('keydown',ev=>{if(ev.key!=='Enter'||ev.target.closest('a'))return;const p=ev.target.closest&&ev.target.closest('.pal');if(p)add(p.dataset.id);const i=ev.target.closest&&ev.target.closest('.it');if(i){S.sel=+i.dataset.i;S.tab='p';all()}});
 document.addEventListener('input',ev=>{const k=ev.target.dataset&&ev.target.dataset.k;if(!k||S.sel==null)return;S.items[S.sel].p[k]=ev.target.value;canvas();save()});
+function bar(){$('#bar').innerHTML=S.pages.map((p,i)=>`<button class="pg${i===S.cur?' on':''}" data-pi="${i}">${e(p.name)}</button>`).join('')+`<button class="pg add" data-add="1">+ Add page</button>`}
+function goPage(i){save();S.cur=i;S.items=S.pages[i].items;S.title=S.pages[i].title;S.sel=null;$('#sb').innerHTML='';all()}
+function addPage(){save();const n=S.pages.length+1;S.pages.push({id:'p'+Date.now().toString(36),name:'page-'+n,title:'Page '+n,items:[],next:'',branch:{}});S.tab='p';goPage(S.pages.length-1)}
+function delPage(){if(S.pages.length<2)return;const id=S.pages[S.cur].id;S.pages.splice(S.cur,1);S.pages.forEach(p=>{if(p.next===id)p.next='';for(const k in p.branch||{})if(p.branch[k]===id)delete p.branch[k]});S.cur=Math.max(0,S.cur-1);S.items=S.pages[S.cur].items;S.title=S.pages[S.cur].title;S.sel=null;$('#sb').innerHTML='';all()}
+function pageClick(ev){if(ev.target.closest('[data-pi]')){goPage(+ev.target.closest('[data-pi]').dataset.pi);return 1}if(ev.target.closest('[data-add]')){addPage();return 1}if(ev.target.closest('[data-delpage]')){delPage();return 1}}
+function pageSettings(){const P=S.pages[S.cur];P.branch=P.branch||{};const opts=(v,f)=>`<option value="">${f}</option>`+S.pages.filter(x=>x!==P).map(x=>`<option value="${x.id}"${v===x.id?' selected':''}>/${e(x.name)}</option>`).join('');
+let h=`<h2>Page settings</h2><label class="f" for="pt">Page title</label><input class="fld" id="pt" value="${e(S.title)}"><label class="f" for="pn">Page name (route and file name)</label><input class="fld" data-pg="name" id="pn" value="${e(P.name)}"><label class="f" for="nx">After the form is submitted, go to</label><select class="fld" data-pg="next" id="nx">${opts(P.next,'Stay on this page')}</select>`;
+let n=0;S.items.filter(i=>i.t==='radios').forEach(r=>L(r.p.options).forEach(o=>{const k=r.p.name+'='+sl(o);h+=`<label class="f" for="br${++n}">${e(r.p.legend)}: if answer is ${e(o)}, go to</label><select class="fld" data-pg="br:${e(k)}" id="br${n}">${opts(P.branch[k],'Use the default above')}</select>`}));
+return h+`<div class="row"><button class="btn s" data-delpage="1"${S.pages.length<2?' disabled':''}>Delete this page</button></div><hr style="border:0;border-top:1px solid var(--ln);margin:16px 0">`}
+function routes(){const nm=id=>{const x=S.pages.find(p=>p.id===id);return x&&x.name};
+let o=`// Pages without forms need no route: the kit serves app/views/<name>.html automatically.\nconst govukPrototypeKit = require('govuk-prototype-kit')\nconst router = govukPrototypeKit.requests.setupRouter()\n`,n=0;
+S.pages.forEach(P=>{if(!hasForm(P.items))return;n++;const br=P.branch||{},rules=[];
+P.items.filter(i=>i.t==='radios').forEach(r=>L(r.p.options).forEach(x=>{const t=nm(br[r.p.name+'='+sl(x)]);if(t)rules.push(`  if (req.session.data[${q(r.p.name)}] === ${q(sl(x))}) {\n    return res.redirect('/${t}')\n  }\n`)}));
+o+=`\n// ${P.title}\nrouter.post('/${P.name}', function (req, res) {\n${rules.join('')}  res.redirect('/${nm(P.next)||P.name}')\n})\n`});
+if(!n)o+=`\n// Add a button or form field to a page to generate its POST route.\n`;return o}
+document.addEventListener('input',ev=>{const k=ev.target.dataset&&ev.target.dataset.pg;if(!k)return;const P=S.pages[S.cur];
+if(k==='name')P.name=sl(ev.target.value)||'page';else if(k==='next')P.next=ev.target.value;else if(k.startsWith('br:')){P.branch=P.branch||{};P.branch[k.slice(3)]=ev.target.value}save();bar()});
 palette();all();
 </script></body></html>
