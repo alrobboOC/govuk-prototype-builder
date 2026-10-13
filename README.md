@@ -26,39 +26,50 @@ open "file://$HOME/govuk-prototype-builder/index.html"
 See the [Prototype Kit documentation](https://prototype-kit.service.gov.uk/docs/) for details and version requirements.
 
 
-## Using the output in the Prototype Kit
 
-For each page you build:
+## Adding your pages to the GOV.UK Prototype Kit
 
-1. Open the **Nunjucks** tab for that page and copy the code.
-2. Save it as `app/views/<page-name>.html` in your Prototype Kit project. The label above the code box shows the file name.
-3. Open the **Routes** tab and copy the code into `app/routes.js`.
-4. Run the kit (`npm start`) and visit `/<page-name>`.
+Once you've finished building your pages in the GOV.UK Prototype Builder, you'll need to transfer them into your GOV.UK Prototype Kit project to turn them into a working prototype.
 
-A generated page looks like this:
+The builder generates the Nunjucks code and JavaScript routes for you, but it does not automatically add them to your Prototype Kit.
 
-```njk
-{% extends "layouts/main.html" %}
+Follow these steps to copy your pages across.
 
-{% from "govuk/components/radios/macro.njk" import govukRadios %}
-{% from "govuk/components/button/macro.njk" import govukButton %}
+### Step 1: Copy the Nunjucks code
 
-{% block pageTitle %}
-  Page title
-{% endblock %}
+1. In the Prototype Builder, select the page you want to add to your prototype.
+2. Open the **Nunjucks** tab on the right.
+3. Copy the generated code.
+4. In VS Code, open your GOV.UK Prototype Kit project.
+5. Navigate to the `app/views` folder.
+6. Create a new HTML file using the filename shown above the generated code, for example `your-name.html`.
+7. Paste the Nunjucks code into the file and save it.
 
-{% block content %}
-<div class="govuk-grid-row">
-  <div class="govuk-grid-column-two-thirds">
-    <form method="post" novalidate>
-      {# Radios: https://design-system.service.gov.uk/components/radios/ #}
-      {{ govukRadios({ ... }) }}
+Repeat these steps for each page you've built.
 
-      {{ govukButton({ text: "Continue" }) }}
-    </form>
-  </div>
-</div>
-{% endblock %}
-```
+### Step 2: Add the routes
 
-The generated code targets `layouts/main.html` and the `govuk-prototype-kit` router API found in recent Prototype Kit versions. If you use an older version, you may need to adjust the layout name, import paths or router setup.
+Routes control what happens when someone submits a form, such as moving them to the next page.
+
+1. In the Prototype Builder, open the **Routes** tab.
+2. Copy the generated JavaScript code.
+3. In VS Code, open `app/routes.js` in your Prototype Kit project.
+4. Add the generated routes to the file, keeping any existing routes you need.
+5. Save the file.
+
+### Step 3: View your pages in the Prototype Kit
+
+1. Open a terminal in your Prototype Kit project.
+2. Run `npm run dev` to start the Prototype Kit.
+3. Open `http://localhost:3000` in your browser.
+4. Add the page name to the URL to view it. For example, `http://localhost:3000/your-name`.
+
+Your page should now appear in your GOV.UK Prototype Kit, using GOV.UK styles and components.
+
+### Making changes
+
+The Prototype Builder and GOV.UK Prototype Kit do not automatically sync.
+
+If you make changes to a page in the builder, you'll need to copy the updated Nunjucks code into the corresponding HTML file in your Prototype Kit again.
+
+If you've changed how pages connect, you'll also need to update the routes in `app/routes.js`.
