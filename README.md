@@ -4,7 +4,7 @@ A drag-and-drop page builder for the [GOV.UK Design System](https://design-syste
 
 It works a bit like Figma for GOV.UK pages: pick components, arrange them on a canvas, edit their content, and get code that follows the Design System's own markup and macros.
 
-> **Status:** an early, single-file tool. It is not affiliated with or endorsed by the Government Digital Service (GDS). Always check generated code against the current Design System guidance.
+
 
 ---
 
