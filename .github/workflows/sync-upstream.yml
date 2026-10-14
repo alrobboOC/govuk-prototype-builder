@@ -1,0 +1,59 @@
+name: Sync upstream builder
+
+on:
+  schedule:
+    - cron: '17 * * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: sync-upstream-builder
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    if: github.repository == 'alrobboOC/govuk-prototype-builder'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - name: Read upstream code
+        run: |
+          git fetch --no-tags https://github.com/mrkwrght/govuk-prototype-builder.git main
+          git rev-parse FETCH_HEAD > "$RUNNER_TEMP/builder-upstream-sha"
+
+      - name: Copy builder files only
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import subprocess
+
+          files = ['index.html', 'styles.css', 'app.js', 'export.js', 'flow.js']
+          # Read all files before writing; fail if upstream changes its layout.
+          contents = {
+              name: subprocess.check_output(['git', 'show', f'FETCH_HEAD:{name}'])
+              for name in files
+          }
+          for name, data in contents.items():
+              Path(name).write_bytes(data)
+          PY
+          node --check app.js
+          node --check export.js
+          node --check flow.js
+
+      - name: Commit updates to this repository
+        run: |
+          git add -- index.html styles.css app.js export.js flow.js
+          if git diff --cached --quiet; then
+            echo 'Builder already matches upstream.'
+            exit 0
+          fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          upstream_sha=$(cat "$RUNNER_TEMP/builder-upstream-sha")
+          git commit -m "Sync builder from upstream ${upstream_sha:0:7}"
+          git push origin HEAD:main

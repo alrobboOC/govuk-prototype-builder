@@ -2,7 +2,7 @@
   "name": "govuk-prototype-builder",
   "private": true,
   "scripts": {
-    "dev": "node scripts/open-builder.js && npm --silent --prefix ../my-prototype run dev",
+    "dev": "node scripts/open-builder.js",
     "builder": "node scripts/open-builder.js"
   }
 }
