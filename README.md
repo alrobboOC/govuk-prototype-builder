@@ -10,7 +10,9 @@ Open the `govuk-prototype-builder` folder in VS Code and select **Terminal → N
 npm run dev
 ```
 
-This opens the builder in your default browser using its actual file location. No `npm install` is needed. The command opens the standalone builder; run your Prototype Kit separately to view generated pages.
+This pulls the latest updates from this repository's `main` branch, then opens the builder in your default browser using its actual file location. No `npm install` is needed. The command opens the standalone builder; run your Prototype Kit separately to view generated pages.
+
+Automatic updates require an internet connection, the `main` branch and no uncommitted edits to tracked files. If an update cannot be applied safely, the command explains why and opens your existing local builder. Run `npm run builder` to open it without checking for updates.
 
 On macOS, the launcher requests a new tab in Firefox and Safari. Other browsers and systems may open a tab or window according to their settings.
 
@@ -60,7 +62,8 @@ govuk-prototype-builder/
 ├── flow.js                 # Upstream flow view code
 ├── export.js               # Upstream export code
 ├── scripts/
-│   └── open-builder.js     # Opens the builder in your default browser
+│   ├── open-builder.js     # Opens the builder in your default browser
+│   └── start-dev.js        # Pulls updates before opening the builder
 ├── package.json            # npm run dev and npm run builder commands
 ├── .npmrc                  # Hides npm command banners
 └── README.md
@@ -72,9 +75,9 @@ The builder is standalone, following the approach of the [upstream repository](h
 
 The **Sync upstream builder** GitHub Actions workflow checks the entire upstream repository every hour and mirrors additions, edits and deletions into this repository's `main` branch. It only reads upstream; nothing is pushed there.
 
-Only our `README.md`, `package.json`, `.npmrc`, `scripts/open-builder.js` and `.github/workflows/sync-upstream.yml` are preserved. All other tracked files follow upstream, including new files and folders. Local edits to those files will be replaced, and tracked files absent from upstream will be removed on the next sync.
+Only our `README.md`, `package.json`, `.npmrc`, `scripts/open-builder.js`, `scripts/start-dev.js` and `.github/workflows/sync-upstream.yml` are preserved. All other tracked files follow upstream, including new files and folders. Local edits to those files will be replaced, and tracked files absent from upstream will be removed on the next sync.
 
-After this workflow is pushed to `main`, enable GitHub Actions if prompted. You can also run it from **Actions → Sync upstream builder → Run workflow**. Scheduled checks may be delayed by GitHub. To bring updates from GitHub into your local folder, run `git pull` when your local changes are committed, then refresh the builder tab.
+After this workflow is pushed to `main`, enable GitHub Actions if prompted. You can also run it from **Actions → Sync upstream builder → Run workflow**. Scheduled checks may be delayed by GitHub. Running `npm run dev` brings updates from GitHub into your local folder automatically before opening the builder. These are the latest changes already synced by the hourly workflow; upstream pushes since the last scheduled sync arrive after the next workflow run.
 
 ## Limitations and attribution
 
