@@ -70,9 +70,9 @@ The builder is standalone, following the approach of the [upstream repository](h
 
 ## Automatic upstream updates
 
-The **Sync upstream builder** GitHub Actions workflow checks upstream every hour and copies changes to `index.html`, `styles.css`, `app.js`, `export.js` and `flow.js` into this repository's `main` branch. It only reads upstream; nothing is pushed there.
+The **Sync upstream builder** GitHub Actions workflow checks the entire upstream repository every hour and mirrors additions, edits and deletions into this repository's `main` branch. It only reads upstream; nothing is pushed there.
 
-Our README, startup script, npm settings and other local files are preserved. Changes made directly to the five synced files will be replaced by upstream's versions on the next sync. New upstream filenames require an update to the workflow's file list.
+Only our `README.md`, `package.json`, `.npmrc`, `scripts/open-builder.js` and `.github/workflows/sync-upstream.yml` are preserved. All other tracked files follow upstream, including new files and folders. Local edits to those files will be replaced, and tracked files absent from upstream will be removed on the next sync.
 
 After this workflow is pushed to `main`, enable GitHub Actions if prompted. You can also run it from **Actions → Sync upstream builder → Run workflow**. Scheduled checks may be delayed by GitHub. To bring updates from GitHub into your local folder, run `git pull` when your local changes are committed, then refresh the builder tab.
 

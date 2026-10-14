@@ -26,34 +26,23 @@ jobs:
           git fetch --no-tags https://github.com/mrkwrght/govuk-prototype-builder.git main
           git rev-parse FETCH_HEAD > "$RUNNER_TEMP/builder-upstream-sha"
 
-      - name: Copy builder files only
+      - name: Mirror upstream repository and preserve local customisations
         run: |
-          python3 - <<'PY'
-          from pathlib import Path
-          import subprocess
-
-          files = ['index.html', 'styles.css', 'app.js', 'export.js', 'flow.js']
-          # Read all files before writing; fail if upstream changes its layout.
-          contents = {
-              name: subprocess.check_output(['git', 'show', f'FETCH_HEAD:{name}'])
-              for name in files
-          }
-          for name, data in contents.items():
-              Path(name).write_bytes(data)
-          PY
-          node --check app.js
-          node --check export.js
-          node --check flow.js
+          git restore --source=FETCH_HEAD --staged --worktree -- . \
+            ':(exclude)README.md' \
+            ':(exclude)package.json' \
+            ':(exclude).npmrc' \
+            ':(exclude)scripts/open-builder.js' \
+            ':(exclude).github/workflows/sync-upstream.yml'
 
       - name: Commit updates to this repository
         run: |
-          git add -- index.html styles.css app.js export.js flow.js
           if git diff --cached --quiet; then
-            echo 'Builder already matches upstream.'
+            echo 'Repository already matches upstream, apart from preserved customisations.'
             exit 0
           fi
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           upstream_sha=$(cat "$RUNNER_TEMP/builder-upstream-sha")
-          git commit -m "Sync builder from upstream ${upstream_sha:0:7}"
+          git commit -m "Sync repository from upstream ${upstream_sha:0:7}"
           git push origin HEAD:main
